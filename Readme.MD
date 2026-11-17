@@ -1,3 +1,5 @@
+*widgets are available at https://github.com/Personofcoding/Jarvis-home-widgets*
+
 # Jarvis HOME — Smart Ambient Display
 
 # Overview
