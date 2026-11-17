@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jarvis HOME — Smart Ambient Display</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts matching the exact script + condensed serif + clean geometric sans aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Anton&family=Montserrat:wght@500;600;700;800&family=Playfair+Display+SC:wght@700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --gold-bright: #FDE047;
+      --gold-mid: #FACC15;
+      --gold-deep: #CA8A04;
+      --glass-bg: rgba(16, 22, 16, 0.62);
+      --glass-dark: rgba(8, 12, 8, 0.88);
+      --glass-border: rgba(253, 224, 71, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    input, textarea, select {
+      user-select: text;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      color: var(--gold-bright);
+      background-color: #060a06;
+      overflow-x: hidden;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ultra-HD Atmospheric Pine Forest Backdrop */
+    .forest-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background-image:
+        linear-gradient(180deg, rgba(8, 14, 10, 0.52) 0%, rgba(6, 11, 8, 0.70) 55%, rgba(4, 7, 5, 0.90) 100%),
+        url('https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=2560&q=90');
+      background-size: cover;
+      background-position: center;
+      filter: contrast(1.12) saturate(0.90) brightness(0.82);
+    }
+
+    .forest-glow {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: radial-gradient(circle at 85% 30%, rgba(253, 224, 71, 0.15) 0%, transparent 55%),
+                  radial-gradient(circle at 12% 18%, rgba(163, 230, 53, 0.08) 0%, transparent 48%);
+    }
+
+    /* Jarvis HOME Typography */
+    .font-jarvis-script {
+      font-family: 'Alex Brush', cursive;
+      line-height: 0.72;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.65);
+    }
+
+    .font-jarvis-home {
+      font-family: 'Anton', 'Playfair Display SC', sans-serif;
+      letter-spacing: 0.04em;
+      line-height: 0.95;
+      transform: scaleY(1.18);
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75);
+    }
+
+    /* Premium Glassmorphic Cards */
+    .jarvis-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      border: 1px solid rgba(253, 224, 71, 0.12);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(253, 224, 71, 0.1);
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .jarvis-card:active {
+      transform: scale(0.992);
+    }
+
+    /* Music Player Gradient */
+    .music-card-gradient {
+      background: linear-gradient(
+        90deg,
+        rgba(16, 22, 16, 0.78) 0%,
+        rgba(22, 28, 18, 0.82) 54%,
+        rgba(218, 185, 42, 0.88) 82%,
+        #FDE047 100%
+      );
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 24px;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Settings Overlay */
+    .settings-overlay-panel {
+      background: rgba(8, 12, 8, 0.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 26px;
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.85);
+      border: 1px solid rgba(253, 224, 71, 0.18);
+    }
+
+    .settings-right-gold-pill {
+      background: linear-gradient(180deg, #FEF08A 0%, #FACC15 55%, #EAB308 100%);
+      border-radius: 0 24px 24px 0;
+    }
+
+    /* Mobile Responsive Optimizations */
+    @media (max-width: 768px) {
+      body {
+        padding: 12px !important;
+      }
+      .jarvis-card {
+        border-radius: 20px;
+        padding: 16px !important;
+      }
+    }
+
+    .now-playing-wrapper {
+      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: right center;
+    }
+
+    .now-playing-hidden {
+      display: none !important;
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(24px) scale(0.97); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    .animate-reveal {
+      animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes voicePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+
+    .voice-dot-active {
+      animation: voicePulse 1.2s infinite ease-in-out;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(253, 224, 71, 0.5);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="flex flex-col justify-between p-3 sm:p-5 lg:px-8 lg:py-6">
+
+  <!-- Background Layers -->
+  <div id="forestBgLayer" class="forest-bg"></div>
+  <div class="forest-glow"></div>
+
+  <!-- Toast Notification Banner -->
+  <div id="jarvisToast" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 hidden max-w-lg w-[94%] px-4 py-3 rounded-2xl bg-black/92 border border-yellow-300/40 text-yellow-300 shadow-2xl backdrop-blur-md transition-all duration-300">
+    <div class="flex items-center gap-3">
+      <span class="w-2.5 h-2.5 rounded-full bg-yellow-300 voice-dot-active shrink-0"></span>
+      <p id="jarvisToastText" class="text-xs sm:text-sm font-bold tracking-wide"></p>
+    </div>
+  </div>
+
+  <!-- ==================== TOP HEADER BAR ==================== -->
+  <header class="w-full flex flex-wrap items-center justify-between gap-3 z-30 mb-4 lg:mb-5">
+    <!-- Left: Whisper AI Voice Wake-Word Listener -->
+    <div class="flex items-center gap-2.5">
+      <button id="micToggleBtn" onclick="toggleVoiceAssistant()" title="Toggle Voice Assistant"
+        class="group flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-yellow-300/10 transition cursor-pointer text-left">
+        <span id="voiceStatusDot" class="w-2.5 h-2.5 rounded-full bg-yellow-300/70 group-hover:bg-yellow-300 transition"></span>
+        <span id="wakeWordStatus" class="text-[11px] sm:text-xs md:text-sm font-extrabold tracking-wider uppercase text-[#FDE047]">
+          LISTENING FOR WAKE WORD...
+        </span>
+      </button>
+
+      <button onclick="openVoiceCommandModal()" title="Ask Jarvis"
+        class="px-2.5 py-1 rounded-full border border-yellow-300/30 bg-black/40 hover:bg-yellow-300/20 text-[10px] font-bold uppercase tracking-wider text-yellow-300 transition">
+        ASK
+      </button>
+    </div>
+
+    <!-- Center: Live Day & Time -->
+    <div class="flex flex-col items-center justify-center order-last sm:order-none w-full sm:w-auto mt-1 sm:mt-0">
+      <div id="liveDay" class="text-lg sm:text-2xl md:text-3xl font-extrabold tracking-wider uppercase text-[#FDE047] leading-none">
+        TUESDAY
+      </div>
+      <div id="liveTime" class="text-[11px] sm:text-sm font-bold tracking-widest uppercase text-[#FDE047] mt-0.5">
+        09:48 PM
+      </div>
+    </div>
+
+    <!-- Right: SETTINGS button + Jarvis HOME Logo -->
+    <div class="flex items-center gap-4 sm:gap-6 ml-auto sm:ml-0">
+      <button id="settingsBtn" onclick="toggleSettingsModal()"
+        class="text-xs sm:text-sm md:text-base font-extrabold tracking-wider uppercase text-[#FDE047] hover:text-white transition cursor-pointer px-3 py-1.5 rounded-xl hover:bg-yellow-300/10">
+        SETTINGS
+      </button>
+
+      <div class="flex flex-col items-end select-none cursor-pointer" onclick="closeAllModals()">
+        <span class="font-jarvis-script text-3xl sm:text-4xl md:text-[40px] text-[#FDE047] pr-1">Jarvis</span>
+        <span class="font-jarvis-home text-base sm:text-xl md:text-2xl text-[#FDE047] tracking-wider">HOME</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN DASHBOARD CONTAINER ==================== -->
+  <main class="relative flex-1 flex flex-col justify-between gap-4 lg:gap-6 w-full max-w-[1600px] mx-auto">
+
+    <!-- ==================== SETTINGS OVERLAY MODAL ==================== -->
+    <section id="settingsOverlay" class="hidden absolute inset-x-0 top-0 z-40 animate-reveal">
+      <div class="relative flex items-stretch w-full min-h-[300px] settings-overlay-panel overflow-hidden">
+        <div class="flex-1 p-4 sm:p-7 flex flex-col justify-between">
+          <div class="flex items-center justify-between gap-4 mb-3">
+            <div class="w-10 hidden md:block"></div>
+            <h2 class="text-center text-[11px] sm:text-sm md:text-base lg:text-lg font-extrabold tracking-wider uppercase text-[#FDE047] mx-auto">
+              ADD WIDGETS, CONNECT SPOTIFY, ADD SCHOOL TIMETABLE
+            </h2>
+            <button onclick="toggleSettingsModal()" title="Close Settings"
+              class="w-7 h-7 rounded-full border border-yellow-300/40 flex items-center justify-center text-yellow-300 hover:bg-yellow-300 hover:text-black font-bold text-xs transition cursor-pointer shrink-0">
+              ✕
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            <!-- Col 1 -->
+            <div class="md:col-span-5 flex items-center justify-around gap-3 md:border-r md:border-[#FDE047]/20 md:pr-4">
+              <div class="flex flex-col items-center">
+                <span class="font-jarvis-script text-3xl sm:text-4xl text-[#FDE047]">Jarvis</span>
+                <span class="font-jarvis-home text-xl sm:text-2xl text-[#FDE047] mt-1">HOME</span>
+              </div>
+              <div class="flex flex-col items-center gap-2 text-center">
+                <button onclick="openSettingsCenter('recap')" class="text-xs sm:text-base font-extrabold tracking-wide uppercase text-[#FDE047] hover:text-white transition cursor-pointer">
+                  DAILY RECAP
+                </button>
+                <button onclick="openSettingsCenter('quotes')" class="text-xs sm:text-base font-extrabold tracking-wide uppercase text-[#FDE047] hover:text-white transition cursor-pointer">
+                  QUOTES
+                </button>
+                <button onclick="openSettingsCenter('customCss')" class="text-xs font-extrabold tracking-wider uppercase text-yellow-300 underline underline-offset-2 transition cursor-pointer">
+                  🎨 CUSTOM CSS WIDGETS
+                </button>
+                <button onclick="openSettingsCenter('general')" class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-yellow-300/80 hover:text-white transition cursor-pointer">
+                  ⚙ ALL SETTINGS
+                </button>
+              </div>
+            </div>
+
+            <!-- Col 2 -->
+            <div class="md:col-span-3 flex flex-col items-center justify-center md:border-r md:border-[#FDE047]/20 md:px-3">
+              <button onclick="openSettingsCenter('spotify')"
+                class="w-32 h-24 sm:w-36 sm:h-28 rounded-2xl bg-yellow-300/10 hover:bg-yellow-300/20 border border-yellow-300/25 flex flex-col items-center justify-center gap-1 transition transform hover:scale-105 cursor-pointer shadow-lg">
+                <span id="spotifyConnectLabel" class="text-xs sm:text-base font-extrabold tracking-wider uppercase text-[#FDE047]">CONNECT</span>
+                <span class="text-[9px] font-semibold uppercase tracking-widest text-yellow-300/75">SPOTIFY / AUDIO</span>
+              </button>
+            </div>
+
+            <!-- Col 3 -->
+            <div class="md:col-span-4 flex flex-col items-center justify-center text-center px-1">
+              <button onclick="openSettingsCenter('timetable')"
+                class="group flex flex-col items-center justify-center p-3 rounded-2xl hover:bg-yellow-300/10 transition cursor-pointer">
+                <span class="text-xs sm:text-base lg:text-lg font-extrabold tracking-wide uppercase text-[#FDE047] group-hover:text-white leading-snug">
+                  UPLOAD<br />PHOTO(S) – 1<sup class="text-[10px]">ST</sup><br />SEMESTER
+                </span>
+                <span class="mt-1 text-[10px] font-semibold uppercase tracking-wider text-yellow-300/75">TIMETABLE & SCHEDULE</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="hidden sm:block w-12 md:w-16 settings-right-gold-pill shrink-0"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TOP ROW: GREETING/TIMETABLE + HIDDEN NOW PLAYING ==================== -->
+    <div id="topGridRow" class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-stretch">
+
+      <!-- Left Card: Greeting & School Timetable -->
+      <section id="greetingCard" class="lg:col-span-12 jarvis-card p-5 sm:p-7 flex flex-col justify-between min-h-[240px] sm:min-h-[270px]">
+        <div>
+          <h1 id="greetingHeading" class="text-xs sm:text-sm md:text-base font-extrabold tracking-wider uppercase text-[#FDE047]">
+            GOOD MORNING, [NAME]
+          </h1>
+          <p class="text-[11px] sm:text-xs md:text-sm font-bold tracking-wider uppercase text-[#FDE047] mt-1.5">
+            TODAY YOU HAVE TO GET READY FOR...
+          </p>
+        </div>
+
+        <div id="timetableDisplayArea" class="my-auto py-2 flex flex-col justify-center">
+          <p id="timetablePlaceholder" onclick="openSettingsCenter('timetable')"
+            class="text-xs sm:text-sm font-extrabold tracking-wider uppercase text-[#FDE047] hover:underline cursor-pointer">
+            [SCHOOL TIMETABLE FOR THE DAY]
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-yellow-300/15 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-yellow-300/80">
+          <div class="flex flex-wrap items-center gap-1.5" id="timetableDaySwitcher">
+            <span id="timetableDayLabel" class="mr-1 text-[#FDE047]">1ST SEMESTER:</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="speakTimetableForResolvedDay()" class="px-2.5 py-1 rounded-lg bg-[#FDE047]/15 hover:bg-[#FDE047] hover:text-black text-[#FDE047] transition cursor-pointer">
+              🔊 LISTEN
+            </button>
+            <button onclick="openSettingsCenter('timetable')" class="hover:text-yellow-300 transition cursor-pointer">
+              + EDIT
+            </button>
+            <button onclick="togglePlayPause()" class="hover:text-yellow-300 transition cursor-pointer">
+              ♪ PLAY
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Card: MUSIC PLAYER (HIDDEN UNTIL PLAYING) -->
+      <section id="nowPlayingCard" class="now-playing-wrapper now-playing-hidden lg:col-span-7 music-card-gradient p-5 sm:p-6 flex flex-col justify-between min-h-[240px] sm:min-h-[270px] relative overflow-hidden">
+        <div class="flex items-center justify-between z-10">
+          <h2 class="text-base sm:text-lg md:text-xl font-extrabold tracking-wider uppercase text-[#FDE047]">MUSIC PLAYER</h2>
+          <button onclick="stopMusicAndHide()" title="Stop"
+            class="px-2 py-0.5 rounded-full bg-black/55 hover:bg-black/80 text-yellow-300 text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer">
+            STOP ✕
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 my-auto py-2 z-10">
+          <div id="albumArtBox" class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-[#8c8816]/85 border border-yellow-300/30 shadow-xl flex items-center justify-center overflow-hidden shrink-0 relative">
+            <div id="albumArtVisual" class="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-gradient-to-br from-yellow-500/40 to-olive-900/80">
+              <span class="text-2xl">♫</span>
+              <span id="audioVisualizerBars" class="flex items-end gap-1 h-3 mt-1">
+                <span class="w-1 bg-yellow-300 h-2 animate-pulse"></span>
+                <span class="w-1 bg-yellow-300 h-3 animate-bounce"></span>
+                <span class="w-1 bg-yellow-300 h-2 animate-pulse"></span>
+              </span>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center sm:items-start text-center sm:text-left">
+            <div id="npSongName" class="text-base sm:text-lg md:text-xl font-extrabold tracking-wide uppercase text-[#FDE047]">SONG NAME</div>
+            <div id="npAlbumName" class="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-[#FDE047]/95 mt-0.5">ALBUM NAME</div>
+            <div id="npArtistName" class="text-[11px] sm:text-xs font-bold tracking-wider uppercase text-[#FDE047]/90">ARTIST NAME</div>
+
+            <div class="flex items-center gap-4 mt-3">
+              <button onclick="prevTrack()" title="Prev" class="hover:scale-110 active:scale-95 transition cursor-pointer p-1">
+                <svg class="w-7 h-6 fill-[#FDE047]" viewBox="0 0 36 28"><polygon points="17,2 17,26 1,14"/><polygon points="34,2 34,26 18,14"/></svg>
+              </button>
+              <button id="playPauseBtn" onclick="togglePlayPause()" title="Play/Pause" class="hover:scale-110 active:scale-95 transition cursor-pointer p-1">
+                <svg id="pauseIcon" class="w-7 h-7 fill-[#FDE047]" viewBox="0 0 28 28"><rect x="5" y="3" width="6" height="22" rx="2"/><rect x="17" y="3" width="6" height="22" rx="2"/></svg>
+                <svg id="playIcon" class="w-7 h-7 fill-[#FDE047] hidden" viewBox="0 0 28 28"><polygon points="5,2 25,14 5,26"/></svg>
+              </button>
+              <button onclick="nextTrack()" title="Next" class="hover:scale-110 active:scale-95 transition cursor-pointer p-1">
+                <svg class="w-7 h-6 fill-[#FDE047]" viewBox="0 0 36 28"><polygon points="2,2 2,26 18,14"/><polygon points="19,2 19,26 35,14"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full max-w-sm bg-black/35 h-1.5 rounded-full overflow-hidden z-10">
+          <div id="trackProgressBar" class="bg-[#FDE047] h-full w-1/3 transition-all duration-500"></div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ==================== BOTTOM ROW: 3 WIDGET CARDS ==================== -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6 items-stretch">
+      <section id="widgetSlot0" onclick="handleWidgetClick(0)" class="md:col-span-3 jarvis-card p-5 min-h-[190px] sm:min-h-[230px] flex flex-col items-center justify-center text-center cursor-pointer relative group">
+        <span class="text-base sm:text-lg font-extrabold tracking-wider uppercase text-[#FDE047]">WIDGET</span>
+      </section>
+      <section id="widgetSlot1" onclick="handleWidgetClick(1)" class="md:col-span-4 jarvis-card p-5 min-h-[190px] sm:min-h-[230px] flex flex-col items-center justify-center text-center cursor-pointer relative group">
+        <span class="text-base sm:text-lg font-extrabold tracking-wider uppercase text-[#FDE047]">WIDGET</span>
+      </section>
+      <section id="widgetSlot2" onclick="handleWidgetClick(2)" class="md:col-span-5 jarvis-card p-5 min-h-[190px] sm:min-h-[230px] flex flex-col items-center justify-center text-center cursor-pointer relative group">
+        <span class="text-base sm:text-lg font-extrabold tracking-wider uppercase text-[#FDE047]">WIDGET</span>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- ==================== SUB-MODAL BACKDROP ==================== -->
+  <div id="subModalBackdrop" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+    <div class="w-full max-w-3xl rounded-3xl bg-[#080d08] border border-yellow-300/35 p-5 sm:p-7 text-[#FDE047] shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-yellow-300/20 pb-3 mb-4">
+        <h3 id="subModalTitle" class="text-base sm:text-lg font-extrabold tracking-wider uppercase">SETTINGS CONTROL CENTER</h3>
+        <button onclick="closeSubModal()" class="w-7 h-7 rounded-full border border-yellow-300/40 flex items-center justify-center hover:bg-yellow-300 hover:text-black font-bold text-xs transition cursor-pointer">
+          ✕
+        </button>
+      </div>
+      <div id="settingsTabNav" class="flex flex-wrap gap-1.5 pb-3 mb-4 border-b border-yellow-300/15"></div>
+      <div id="subModalBody" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. STATE & OFFICIAL 1ST SEMESTER TIMETABLE (FROM IMAGE)
+       ========================================================================== */
+    const BG_DAY_NAMES = {
+      MONDAY: 'ПОНЕДЕЛНИК', TUESDAY: 'ВТОРНИК', WEDNESDAY: 'СРЯДА',
+      THURSDAY: 'ЧЕТВЪРТЪК', FRIDAY: 'ПЕТЪК', SATURDAY: 'СЪБОТА', SUNDAY: 'НЕДЕЛЯ'
+    };
+
+    const BG_ORDINALS = ['Първи час', 'Втори час', 'Трети час', 'Четвърти час', 'Пети час', 'Шести час', 'Седми час'];
+    const BG_ORDINALS_LATIN = ['Purvi chas', 'Vtori chas', 'Treti chas', 'Chetvurti chas', 'Peti chas', 'Shesti chas', 'Sedmi chas'];
+
+    const OFFICIAL_TIMETABLE = {
+      MONDAY: [],
+      TUESDAY: [],
+      WEDNESDAY: [],
+      THURSDAY: [],
+      FRIDAY: [],
+      SATURDAY: [],
+      SUNDAY: []
+    };
+
+    const WALLPAPER_PRESETS = {
+      pine: { label: 'Pine Forest (Default)', url: 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=2560&q=90' },
+      mist: { label: 'Misty Evergreen Woods', url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=2560&q=90' },
+      canopy: { label: 'Golden Sunlit Canopy', url: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=2560&q=90' },
+      midnight: { label: 'Deep Midnight Ridge', url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2560&q=90' }
+    };
+
+    const PLAYLIST = [
+      { title: 'FOREST RAIN & CHIMES', album: 'AMBIENT JARVIS', artist: 'JARVIS AUDIO', notes: [261.63, 329.63, 392.0, 493.88] },
+      { title: 'GOLDEN CANOPY LO-FI', album: 'MORNING ROUTINE', artist: 'STARK LABS', notes: [293.66, 349.23, 440.0, 523.25] },
+      { title: 'MIDNIGHT PINE DRIFT', album: 'DEEP FOCUS', artist: 'HOME SYNTH', notes: [220.0, 261.63, 329.63, 392.0] }
+    ];
+
+    const DEFAULT_STATE = {
+      userName: '[NAME]',
+      wakeWord: 'Jarvis',
+      use24HourClock: false,
+      autoTomorrowPreview: true,
+      showVisualTimes: true,
+      spotifyConnected: false,
+      currentTrackIndex: 0,
+      isPlaying: false,
+      selectedTimetableDay: 'AUTO',
+      timetable: structuredClone(OFFICIAL_TIMETABLE),
+      useCustomTimetable: true,
+      semesterPhotos: [],
+      voiceSettings: { rate: 0.88, pitch: 0.88, volume: 0.90 },
+      appearance: { wallpaperKey: 'pine', customWallpaperUrl: '', glassBlur: 12, cardOpacity: 0.62 },
+      dailyRecapItems: ['Провери програмата', 'Английски & Математика', 'Вечерна релаксация'],
+      quotes: ['"Sometimes you gotta run before you can walk." — Tony Stark', '"Simplicity is the ultimate sophistication." — Leonardo da Vinci'],
+      activeQuoteIndex: 0,
+      quickNotes: 'Prepare notebooks for tomorrow.',
+      weatherInfo: { temp: '12°C', condition: 'CLEAR • BULGARIA', city: 'SOFIA' },
+      timerSecondsLeft: 1500,
+      timerRunning: false,
+      widgets: ['empty', 'empty', 'empty'],
+      customCssWidgets: [
+        {
+          id: 'custom_1',
+          name: 'My Neon Glass Card',
+          css: '.my-custom-card {\n  background: linear-gradient(135deg, rgba(253,224,71,0.15), rgba(16,22,16,0.8));\n  border: 1px solid #FDE047;\n  border-radius: 16px;\n  padding: 14px;\n  text-align: center;\n}\n.my-custom-title {\n  color: #FDE047;\n  font-weight: 800;\n  font-size: 14px;\n  text-transform: uppercase;\n}',
+          html: '<div class="my-custom-card">\n  <div class="my-custom-title">⚡ CUSTOM CSS WIDGET</div>\n  <p style="font-size: 11px; color: #fff; margin-top: 4px;">Fully styled with custom CSS!</p>\n</div>'
+        }
+      ],
+      widgetCustomIds: ['', '', '']
+    };
+
+    const STORAGE_KEY = 'jarvis_home_v4_mobile';
+    let appState = JSON.parse(localStorage.getItem(STORAGE_KEY)) || structuredClone(DEFAULT_STATE);
+    appState.voiceSettings = { ...DEFAULT_STATE.voiceSettings, ...(appState.voiceSettings || {}) };
+    appState.appearance = { ...DEFAULT_STATE.appearance, ...(appState.appearance || {}) };
+
+    function saveState() {
+      try {
+        const copy = { ...appState, isPlaying: false, timerRunning: false };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(copy));
+      } catch (e) {}
+    }
+
+    /* ==========================================================================
+       2. AUDIO & NOW PLAYING CONTROLLER
+       ========================================================================== */
+    let audioCtx = null;
+    let synthLoopTimer = null;
+    let progressTimer = null;
+    let trackProgressPct = 22;
+
+    function playAmbientChord() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const track = PLAYLIST[appState.currentTrackIndex];
+        const now = audioCtx.currentTime;
+        const note = track.notes[Math.floor(Math.random() * track.notes.length)];
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(note, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.04, now + 0.4);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 2.6);
+      } catch (_) {}
+    }
+
+    function startMusicLoop() {
+      stopMusicLoop();
+      playAmbientChord();
+      synthLoopTimer = setInterval(playAmbientChord, 2400);
+      progressTimer = setInterval(() => {
+        trackProgressPct = (trackProgressPct + 1.5) % 100;
+        const bar = document.getElementById('trackProgressBar');
+        if (bar) bar.style.width = `${Math.max(8, trackProgressPct)}%`;
+      }, 1000);
+    }
+
+    function stopMusicLoop() {
+      if (synthLoopTimer) clearInterval(synthLoopTimer);
+      if (progressTimer) clearInterval(progressTimer);
+      synthLoopTimer = null;
+      progressTimer = null;
+    }
+
+    function updateNowPlayingUI() {
+      const card = document.getElementById('nowPlayingCard');
+      const greetingCard = document.getElementById('greetingCard');
+      const track = PLAYLIST[appState.currentTrackIndex];
+
+      document.getElementById('npSongName').textContent = track.title;
+      document.getElementById('npAlbumName').textContent = track.album;
+      document.getElementById('npArtistName').textContent = track.artist;
+
+      if (appState.isPlaying) {
+        card.classList.remove('now-playing-hidden');
+        card.classList.add('animate-reveal');
+        greetingCard.classList.remove('lg:col-span-12');
+        greetingCard.classList.add('lg:col-span-5');
+        document.getElementById('pauseIcon').classList.remove('hidden');
+        document.getElementById('playIcon').classList.add('hidden');
+      } else {
+        card.classList.add('now-playing-hidden');
+        card.classList.remove('animate-reveal');
+        greetingCard.classList.remove('lg:col-span-5');
+        greetingCard.classList.add('lg:col-span-12');
+        document.getElementById('pauseIcon').classList.add('hidden');
+        document.getElementById('playIcon').classList.remove('hidden');
+      }
+    }
+
+    function playTrack(idx = appState.currentTrackIndex) {
+      appState.currentTrackIndex = (idx + PLAYLIST.length) % PLAYLIST.length;
+      appState.isPlaying = true;
+      updateNowPlayingUI();
+      renderWidgets();
+      startMusicLoop();
+    }
+
+    function togglePlayPause() {
+      if (appState.isPlaying) stopMusicAndHide();
+      else playTrack(appState.currentTrackIndex);
+    }
+
+    function stopMusicAndHide() {
+      appState.isPlaying = false;
+      stopMusicLoop();
+      updateNowPlayingUI();
+      renderWidgets();
+    }
+
+    function nextTrack() {
+      trackProgressPct = 10;
+      playTrack(appState.currentTrackIndex + 1);
+    }
+
+    function prevTrack() {
+      trackProgressPct = 10;
+      playTrack(appState.currentTrackIndex - 1);
+    }
+
+    /* ==========================================================================
+       3. APPEARANCE & WALLPAPER ENGINE
+       ========================================================================== */
+    function applyAppearanceSettings() {
+      const bgEl = document.getElementById('forestBgLayer');
+      const preset = WALLPAPER_PRESETS[appState.appearance.wallpaperKey] || WALLPAPER_PRESETS.pine;
+      const url = appState.appearance.customWallpaperUrl || preset.url;
+      if (bgEl) {
+        bgEl.style.backgroundImage = `
+          linear-gradient(180deg, rgba(8, 14, 10, 0.52) 0%, rgba(6, 11, 8, 0.70) 55%, rgba(4, 7, 5, 0.90) 100%),
+          url('${url}')
+        `;
+      }
+      document.querySelectorAll('.jarvis-card').forEach(card => {
+        card.style.backdropFilter = `blur(${appState.appearance.glassBlur}px)`;
+        card.style.webkitBackdropFilter = `blur(${appState.appearance.glassBlur}px)`;
+        card.style.background = `rgba(16, 22, 16, ${appState.appearance.cardOpacity})`;
+      });
+    }
+
+    /* ==========================================================================
+       4. TIMETABLE & CLOCK ENGINE
+       ========================================================================== */
+    function parseTimeRangeMinutes(timeStr) {
+      if (!timeStr) return null;
+      const match = String(timeStr).match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+      if (!match) return null;
+      return { start: parseInt(match[1]) * 60 + parseInt(match[2]), end: parseInt(match[3]) * 60 + parseInt(match[4]) };
+    }
+
+    function getResolvedTimetableDay(now = new Date()) {
+      const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+      const todayKey = days[now.getDay()];
+      const currentMins = now.getHours() * 60 + now.getMinutes();
+
+      if (appState.selectedTimetableDay && appState.selectedTimetableDay !== 'AUTO') {
+        return { dayKey: appState.selectedTimetableDay, isTomorrowPreview: false };
+      }
+      if (todayKey === 'SATURDAY' || todayKey === 'SUNDAY') {
+        return { dayKey: 'MONDAY', isTomorrowPreview: true };
+      }
+      if (appState.autoTomorrowPreview) {
+        if (todayKey === 'FRIDAY' && currentMins > 13 * 60 + 35) return { dayKey: 'MONDAY', isTomorrowPreview: true };
+        if (currentMins > 14 * 60 + 30) {
+          const nextKey = days[(now.getDay() + 1) % 7];
+          if (nextKey !== 'SATURDAY' && nextKey !== 'SUNDAY') return { dayKey: nextKey, isTomorrowPreview: true };
+        }
+      }
+      return { dayKey: todayKey, isTomorrowPreview: false };
+    }
+
+    function setSelectedTimetableDay(dayKey) {
+      appState.selectedTimetableDay = dayKey;
+      saveState();
+      updateClockAndGreeting();
+      renderWidgets();
+    }
+
+    function updateClockAndGreeting() {
+      const now = new Date();
+      const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+      const dayName = days[now.getDay()];
+      const hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+
+      let formattedTime = appState.use24HourClock
+        ? `${String(hours).padStart(2, '0')}:${minutes}`
+        : `${String(hours % 12 || 12).padStart(2, '0')}:${minutes} ${hours >= 12 ? 'PM' : 'AM'}`;
+
+      document.getElementById('liveDay').textContent = dayName;
+      document.getElementById('liveTime').textContent = formattedTime;
+
+      let timeGreeting = hours >= 12 && hours < 18 ? 'GOOD AFTERNOON' : hours >= 18 ? 'GOOD EVENING' : 'GOOD MORNING';
+      const name = appState.userName || '[NAME]';
+      document.getElementById('greetingHeading').textContent = `${name === '[NAME]' ? 'GOOD MORNING' : timeGreeting}, ${name}`;
+
+      const resolved = getResolvedTimetableDay(now);
+      const switcherEl = document.getElementById('timetableDaySwitcher');
+      const dayPills = [{ key: 'AUTO', label: 'AUTO' }, { key: 'MONDAY', label: 'ПН' }, { key: 'TUESDAY', label: 'ВТ' }, { key: 'WEDNESDAY', label: 'СР' }, { key: 'THURSDAY', label: 'ЧТ' }, { key: 'FRIDAY', label: 'ПТ' }];
+
+      switcherEl.innerHTML = dayPills.map(p => `
+        <button onclick="setSelectedTimetableDay('${p.key}')"
+          class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase transition cursor-pointer ${
+            appState.selectedTimetableDay === p.key || (appState.selectedTimetableDay !== 'AUTO' && p.key === resolved.dayKey)
+              ? 'bg-[#FDE047] text-black' : 'bg-yellow-300/10 text-yellow-300/80 hover:bg-yellow-300/25'
+          }">${p.label}</button>
+      `).join('');
+
+      const container = document.getElementById('timetableDisplayArea');
+      const classes = appState.timetable[resolved.dayKey] || [];
+      const bgTitle = BG_DAY_NAMES[resolved.dayKey] || resolved.dayKey;
+      const currentMins = now.getHours() * 60 + now.getMinutes();
+
+      let html = `<div class="flex items-center justify-between mb-1.5"><span class="text-[11px] font-extrabold uppercase text-[#FDE047]">${bgTitle} (${resolved.dayKey}) ${resolved.isTomorrowPreview ? '• УТРЕ' : ''}</span><span class="text-[10px] font-bold text-yellow-300/70">${classes.length} ЧАСА</span></div>`;
+
+      if (classes.length > 0) {
+        let nextFound = false;
+        html += `<div class="w-full space-y-1 max-h-[160px] overflow-y-auto pr-1">`;
+        classes.forEach((cls, idx) => {
+          const range = parseTimeRangeMinutes(cls.time);
+          let badge = '';
+          let highlight = 'bg-yellow-300/10 border-yellow-300/20 text-[#FDE047]';
+          if (!resolved.isTomorrowPreview && range) {
+            if (currentMins >= range.start && currentMins <= range.end) {
+              highlight = 'bg-[#FDE047] border-[#FDE047] text-black';
+              badge = '<span class="px-1 py-0.5 rounded bg-black text-[#FDE047] text-[9px] font-extrabold ml-1">СЕГА</span>';
+            } else if (!nextFound && currentMins < range.start) {
+              nextFound = true;
+              highlight = 'bg-yellow-300/25 border-[#FDE047] text-[#FDE047]';
+              badge = '<span class="px-1 py-0.5 rounded bg-[#FDE047] text-black text-[9px] font-extrabold ml-1">СЛЕДВА</span>';
+            }
+          }
+          const ordinal = BG_ORDINALS[idx] || `${idx + 1} час`;
+          const timeLabel = appState.showVisualTimes && cls.time ? ` (${cls.time})` : '';
+          const teacher = cls.teacher ? ` — ${cls.teacher}` : '';
+          html += `<div class="px-2.5 py-1 rounded-xl border ${highlight} flex items-center justify-between gap-2 text-[11px] font-extrabold"><span class="truncate"><span>${ordinal}${timeLabel}:</span> ${escapeHtml(cls.subject)}<span class="opacity-80">${escapeHtml(teacher)}</span></span>${badge}</div>`;
+        });
+        html += `</div>`;
+      } else {
+        html += `<p class="text-xs font-extrabold uppercase text-[#FDE047] text-center py-2">НЯМА ЧАСОВЕ ЗА ${bgTitle}</p>`;
+      }
+      container.innerHTML = html;
+    }
+
+    /* ==========================================================================
+       5. WIDGET SLOTS & CUSTOM CSS WIDGETS
+       ========================================================================== */
+    let quickTimerInterval = null;
+
+    function renderWidgets() {
+      appState.widgets.forEach((type, idx) => {
+        const el = document.getElementById(`widgetSlot${idx}`);
+        if (!el) return;
+
+        if (type === 'customCss') {
+          const customId = appState.widgetCustomIds[idx] || appState.customCssWidgets[0]?.id;
+          const customObj = appState.customCssWidgets.find(w => w.id === customId) || appState.customCssWidgets[0];
+          if (!customObj) {
+            el.innerHTML = `<span class="text-base font-extrabold uppercase text-[#FDE047]">CUSTOM CSS</span>`;
+            return;
+          }
+          el.innerHTML = `
+            <style>${customObj.css}</style>
+            <div class="w-full h-full flex flex-col justify-between text-left">${customObj.html}</div>
+          `;
+          return;
+        }
+
+        if (type === 'empty') {
+          el.innerHTML = `
+            <span class="text-base sm:text-lg font-extrabold tracking-wider uppercase text-[#FDE047]">WIDGET</span>
+            <span class="opacity-0 group-hover:opacity-75 transition text-[10px] font-bold uppercase tracking-widest mt-1 text-yellow-300">CLICK TO CUSTOMIZE</span>
+          `;
+        } else if (type === 'nextClass') {
+          const resolved = getResolvedTimetableDay(new Date());
+          const first = (appState.timetable[resolved.dayKey] || [])[0];
+          el.innerHTML = `
+            <div class="w-full h-full flex flex-col items-center justify-between text-center">
+              <span class="text-[10px] font-extrabold uppercase text-yellow-300/75">FIRST PERIOD</span>
+              <div class="my-auto text-xs sm:text-sm font-extrabold uppercase text-[#FDE047]">${first ? escapeHtml(first.subject) : 'NO CLASSES'}</div>
+              <span class="text-[9px] font-bold uppercase text-yellow-300/60">CLICK TO HEAR</span>
+            </div>
+          `;
+        } else if (type === 'weather') {
+          el.innerHTML = `
+            <div class="w-full h-full flex flex-col items-center justify-between text-center">
+              <span class="text-[10px] font-extrabold uppercase text-yellow-300/75">WEATHER</span>
+              <div class="my-auto text-3xl font-extrabold text-[#FDE047]">${appState.weatherInfo.temp}</div>
+              <span class="text-[9px] font-bold uppercase text-yellow-300/60">${appState.weatherInfo.condition}</span>
+            </div>
+          `;
+        } else if (type === 'timer') {
+          const m = String(Math.floor(appState.timerSecondsLeft / 60)).padStart(2, '0');
+          const s = String(appState.timerSecondsLeft % 60).padStart(2, '0');
+          el.innerHTML = `
+            <div class="w-full h-full flex flex-col items-center justify-between text-center">
+              <span class="text-[10px] font-extrabold uppercase text-yellow-300/75">FOCUS TIMER</span>
+              <div class="text-3xl font-extrabold text-[#FDE047] my-auto">${m}:${s}</div>
+              <button onclick="event.stopPropagation(); appState.timerRunning=!appState.timerRunning; renderWidgets();" class="px-3 py-1 rounded-full bg-[#FDE047] text-black text-[9px] font-extrabold uppercase">
+                ${appState.timerRunning ? 'PAUSE' : 'START'}
+              </button>
+            </div>
+          `;
+        } else if (type === 'music') {
+          const track = PLAYLIST[appState.currentTrackIndex];
+          el.innerHTML = `
+            <div class="w-full h-full flex flex-col items-center justify-between text-center">
+              <span class="text-[10px] font-extrabold uppercase text-yellow-300/75">MUSIC LAUNCHER</span>
+              <div class="my-auto"><div class="text-sm font-extrabold uppercase text-[#FDE047]">${track.title}</div></div>
+              <span class="px-3 py-1 rounded-full bg-yellow-300 text-black text-[10px] font-extrabold uppercase">${appState.isPlaying ? 'PAUSE' : '▶ PLAY'}</span>
+            </div>
+          `;
+        } else if (type === 'recap') {
+          el.innerHTML = `
+            <div class="w-full h-full flex flex-col justify-between text-left">
+              <span class="text-[10px] font-extrabold uppercase text-yellow-300/75">DAILY RECAP</span>
+              <ul class="space-y-1 my-auto">${appState.dailyRecapItems.slice(0, 2).map(i => `<li class="text-[11px] font-bold text-[#FDE047] truncate">• ${escapeHtml(i)}</li>`).join('')}</ul>
+              <span class="text-[9px] font-bold uppercase text-yellow-300/60">CLICK TO EDIT</span>
+            </div>
+          `;
+        } else if (type === 'quote') {
+          el.innerHTML = `
+            <div class="w-full h-full flex flex-col items-center justify-between text-center">
+              <span class="text-[10px] font-extrabold uppercase text-yellow-300/75">QUOTE</span>
+              <p class="text-xs font-bold italic text-[#FDE047] my-auto">${escapeHtml(appState.quotes[appState.activeQuoteIndex])}</p>
+              <span class="text-[9px] font-bold uppercase text-yellow-300/60">CLICK NEXT</span>
+            </div>
+          `;
+        }
+      });
+    }
+
+    function handleWidgetClick(slotIdx) {
+      const type = appState.widgets[slotIdx];
+      if (type === 'empty' || type === 'customCss') openSettingsCenter('widgets', slotIdx);
+      else if (type === 'nextClass') speakTimetableForResolvedDay();
+      else if (type === 'timer') { appState.timerRunning = !appState.timerRunning; renderWidgets(); }
+      else if (type === 'music') togglePlayPause();
+      else if (type === 'recap') openSettingsCenter('recap');
+      else if (type === 'quote') { appState.activeQuoteIndex = (appState.activeQuoteIndex + 1) % appState.quotes.length; saveState(); renderWidgets(); }
+    }
+
+    /* ==========================================================================
+       6. SETTINGS CONTROL CENTER (WITH CUSTOM CSS WIDGET EDITOR)
+       ========================================================================== */
+    let activeSettingsTab = 'general';
+
+    function toggleSettingsModal() {
+      document.getElementById('settingsOverlay').classList.toggle('hidden');
+    }
+
+    function closeAllModals() {
+      document.getElementById('settingsOverlay').classList.add('hidden');
+      document.getElementById('subModalBackdrop').classList.add('hidden');
+    }
+
+    function closeSubModal() {
+      document.getElementById('subModalBackdrop').classList.add('hidden');
+    }
+
+    function openSettingsCenter(tab = 'general', extraData = null) {
+      activeSettingsTab = tab;
+      const backdrop = document.getElementById('subModalBackdrop');
+      const titleEl = document.getElementById('subModalTitle');
+      const navEl = document.getElementById('settingsTabNav');
+      const bodyEl = document.getElementById('subModalBody');
+
+      backdrop.classList.remove('hidden');
+
+      const tabs = [
+        { id: 'general', label: '⚙ GENERAL' },
+        { id: 'voice', label: '🎙 VOICE' },
+        { id: 'timetable', label: '📅 TIMETABLE' },
+        { id: 'appearance', label: '🌲 THEME' },
+        { id: 'widgets', label: '🧩 WIDGETS' },
+        { id: 'customCss', label: '🎨 CSS STUDIO' },
+        { id: 'spotify', label: '🎵 SPOTIFY' },
+        { id: 'recap', label: '📝 RECAP' }
+      ];
+
+      navEl.innerHTML = tabs.map(t => `
+        <button onclick="openSettingsCenter('${t.id}')"
+          class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer ${
+            activeSettingsTab === t.id ? 'bg-[#FDE047] text-black' : 'bg-yellow-300/10 text-[#FDE047] hover:bg-yellow-300/20'
+          }">${t.label}</button>
+      `).join('');
+
+      if (tab === 'general') {
+        titleEl.textContent = 'GENERAL & MOBILE SETTINGS';
+        bodyEl.innerHTML = `
+          <div class="space-y-3">
+            <div class="p-3 rounded-2xl bg-black/50 border border-yellow-300/20">
+              <label class="block text-xs font-extrabold uppercase mb-1">YOUR NAME:</label>
+              <div class="flex gap-2">
+                <input id="userNameInput" type="text" value="${escapeHtml(appState.userName)}"
+                  class="flex-1 px-3 py-2 rounded-xl bg-black/70 border border-yellow-300/30 text-xs font-bold text-[#FDE047]" />
+                <button onclick="appState.userName=document.getElementById('userNameInput').value.trim()||'[NAME]'; saveState(); updateClockAndGreeting(); showToast('UPDATED');"
+                  class="px-3 py-2 rounded-xl bg-[#FDE047] text-black text-xs font-extrabold uppercase">SAVE</button>
+              </div>
+            </div>
+            <div class="p-3 rounded-2xl bg-black/50 border border-yellow-300/20 flex items-center justify-between">
+              <div><div class="text-xs font-extrabold uppercase">24-HOUR CLOCK</div></div>
+              <button onclick="appState.use24HourClock=!appState.use24HourClock; saveState(); updateClockAndGreeting(); openSettingsCenter('general');"
+                class="px-3 py-1.5 rounded-xl bg-[#FDE047] text-black text-xs font-extrabold uppercase">${appState.use24HourClock ? 'ON' : 'OFF'}</button>
+            </div>
+            <div class="p-3 rounded-2xl bg-black/50 border border-yellow-300/20 flex items-center justify-between">
+              <div><div class="text-xs font-extrabold uppercase">AUTO TOMORROW PREVIEW</div></div>
+              <button onclick="appState.autoTomorrowPreview=!appState.autoTomorrowPreview; saveState(); updateClockAndGreeting(); openSettingsCenter('general');"
+                class="px-3 py-1.5 rounded-xl bg-[#FDE047] text-black text-xs font-extrabold uppercase">${appState.autoTomorrowPreview ? 'ON' : 'OFF'}</button>
+            </div>
+          </div>
+        `;
+      } else if (tab === 'customCss') {
+        titleEl.textContent = '🎨 CUSTOM CSS WIDGET STUDIO';
+        bodyEl.innerHTML = `
+          <p class="text-xs font-bold text-yellow-300/80">
+            Design your own custom widget using CSS & HTML! Inject any custom styles and markup.
+          </p>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase mb-1">WIDGET NAME:</label>
+              <input id="cssWidgetName" type="text" placeholder="My Cool Widget" class="w-full px-3 py-2 rounded-xl bg-black/70 border border-yellow-300/30 text-xs text-[#FDE047]" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase mb-1">CUSTOM CSS:</label>
+              <textarea id="cssWidgetCss" rows="4" placeholder=".my-card { background: #111; color: #FDE047; padding: 10px; border-radius: 8px; }" class="w-full px-3 py-2 rounded-xl bg-black/70 border border-yellow-300/30 text-xs font-mono text-yellow-200"></textarea>
+            </div>
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase mb-1">CUSTOM HTML:</label>
+              <textarea id="cssWidgetHtml" rows="3" placeholder="<div class='my-card'>Hello World</div>" class="w-full px-3 py-2 rounded-xl bg-black/70 border border-yellow-300/30 text-xs font-mono text-yellow-200"></textarea>
+            </div>
+            <button onclick="saveNewCustomCssWidget()" class="w-full py-2.5 rounded-xl bg-[#FDE047] text-black text-xs font-extrabold uppercase cursor-pointer">
+              + SAVE CUSTOM CSS WIDGET
+            </button>
+          </div>
+          <div class="pt-3 border-t border-yellow-300/20 space-y-2">
+            <span class="text-[11px] font-extrabold uppercase text-yellow-300/75">SAVED CUSTOM WIDGETS:</span>
+            ${appState.customCssWidgets.map(w => `
+              <div class="p-2.5 rounded-xl bg-black/50 border border-yellow-300/20 flex items-center justify-between text-xs">
+                <span class="font-bold text-[#FDE047]">${escapeHtml(w.name)}</span>
+                <button onclick="assignCustomWidgetToSlot('${w.id}')" class="px-3 py-1 rounded bg-[#FDE047] text-black font-extrabold uppercase text-[10px]">PIN TO WIDGET</button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (tab === 'voice') {
+        titleEl.textContent = 'COZY ENGLISH VOICE SETTINGS';
+        bodyEl.innerHTML = `
+          <div class="p-4 rounded-2xl bg-yellow-300/10 border border-yellow-300/25 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-extrabold uppercase">GOOGLE US ENGLISH COZY VOICE</div>
+              <div class="text-[11px] text-yellow-300/80">Number-free ordinal schedule readout</div>
+            </div>
+            <button onclick="speakTimetableForResolvedDay()" class="px-4 py-2 rounded-xl bg-[#FDE047] text-black text-xs font-extrabold uppercase">TEST</button>
+          </div>
+        `;
+      } else if (tab === 'timetable') {
+        const editingDay = extraData || getResolvedTimetableDay(new Date()).dayKey;
+        const periods = appState.timetable[editingDay] || [];
+        titleEl.textContent = '1ST SEMESTER TIMETABLE';
+        bodyEl.innerHTML = `
+          <div class="flex flex-wrap gap-1 pb-2">
+            ${Object.keys(BG_DAY_NAMES).slice(0,5).map(d => `
+              <button onclick="openSettingsCenter('timetable', '${d}')" class="px-2.5 py-1 rounded text-xs font-extrabold uppercase ${editingDay===d ? 'bg-[#FDE047] text-black' : 'bg-yellow-300/10 text-[#FDE047]'}">${BG_DAY_NAMES[d]}</button>
+            `).join('')}
+          </div>
+          <div class="space-y-1.5 max-h-[220px] overflow-y-auto">
+            ${periods.map((p, idx) => `
+              <div class="grid grid-cols-12 gap-1 items-center bg-black/50 p-1.5 rounded-xl border border-yellow-300/20 text-xs">
+                <span class="col-span-2 font-bold text-yellow-300/80">${BG_ORDINALS[idx]}</span>
+                <input type="text" value="${escapeHtml(p.subject)}" onchange="appState.timetable['${editingDay}'][${idx}].subject=this.value; saveState(); updateClockAndGreeting();" class="col-span-8 px-2 py-1 bg-black/70 border border-yellow-300/20 text-[#FDE047] rounded" />
+                <button onclick="appState.timetable['${editingDay}'].splice(${idx},1); saveState(); updateClockAndGreeting(); openSettingsCenter('timetable', '${editingDay}');" class="col-span-2 text-center text-red-400 font-bold">✕</button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (tab === 'appearance') {
+        titleEl.textContent = 'THEME & WALLPAPER';
+        bodyEl.innerHTML = `
+          <div class="grid grid-cols-2 gap-2">
+            ${Object.entries(WALLPAPER_PRESETS).map(([k, item]) => `
+              <button onclick="appState.appearance.wallpaperKey='${k}'; appState.appearance.customWallpaperUrl=''; saveState(); applyAppearanceSettings(); openSettingsCenter('appearance');"
+                class="p-2 rounded-xl border text-left flex items-center gap-2 ${appState.appearance.wallpaperKey===k ? 'border-[#FDE047] bg-yellow-300/20' : 'border-yellow-300/20 bg-black/50'}">
+                <img src="${item.url}" class="w-10 h-8 rounded object-cover" />
+                <span class="text-[11px] font-bold text-[#FDE047]">${item.label}</span>
+              </button>
+            `).join('')}
+          </div>
+        `;
+      } else if (tab === 'widgets') {
+        const slot = typeof extraData === 'number' ? extraData : 0;
+        titleEl.textContent = `CONFIGURE WIDGET SLOT ${slot + 1}`;
+        bodyEl.innerHTML = `
+          <div class="space-y-2">
+            ${[0, 1, 2].map(s => `
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-black/50 border border-yellow-300/20 text-xs">
+                <span class="font-extrabold uppercase">SLOT ${s+1}</span>
+                <select onchange="appState.widgets[${s}]=this.value; saveState(); renderWidgets();" class="px-2 py-1 rounded bg-black text-[#FDE047] font-bold">
+                  <option value="empty" ${appState.widgets[s]==='empty'?'selected':''}>EMPTY WIDGET</option>
+                  <option value="nextClass" ${appState.widgets[s]==='nextClass'?'selected':''}>FIRST PERIOD</option>
+                  <option value="weather" ${appState.widgets[s]==='weather'?'selected':''}>WEATHER</option>
+                  <option value="music" ${appState.widgets[s]==='music'?'selected':''}>MUSIC LAUNCHER</option>
+                  <option value="recap" ${appState.widgets[s]==='recap'?'selected':''}>DAILY RECAP</option>
+                  <option value="quote" ${appState.widgets[s]==='quote'?'selected':''}>QUOTE</option>
+                  <option value="timer" ${appState.widgets[s]==='timer'?'selected':''}>FOCUS TIMER</option>
+                  <option value="customCss" ${appState.widgets[s]==='customCss'?'selected':''}>🎨 CUSTOM CSS WIDGET</option>
+                </select>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (tab === 'spotify') {
+        titleEl.textContent = 'SPOTIFY & AUDIO';
+        bodyEl.innerHTML = `
+          <div class="space-y-2">
+            ${PLAYLIST.map((t, i) => `
+              <div class="p-3 rounded-xl bg-black/50 border border-yellow-300/20 flex items-center justify-between text-xs">
+                <span class="font-extrabold text-[#FDE047]">${t.title}</span>
+                <button onclick="playTrack(${i}); closeAllModals();" class="px-3 py-1 rounded bg-[#FDE047] text-black font-extrabold">▶ PLAY</button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (tab === 'recap') {
+        titleEl.textContent = 'DAILY RECAP';
+        bodyEl.innerHTML = `
+          <div class="space-y-2">
+            ${appState.dailyRecapItems.map((item, i) => `
+              <input type="text" value="${escapeHtml(item)}" onchange="appState.dailyRecapItems[${i}]=this.value; saveState(); renderWidgets();" class="w-full px-3 py-2 rounded bg-black/60 border border-yellow-300/30 text-xs text-[#FDE047]" />
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+
+    function saveNewCustomCssWidget() {
+      const name = document.getElementById('cssWidgetName')?.value.trim();
+      const css = document.getElementById('cssWidgetCss')?.value.trim();
+      const html = document.getElementById('cssWidgetHtml')?.value.trim();
+      if (!name || !html) {
+        showToast('PLEASE ENTER WIDGET NAME AND HTML');
+        return;
+      }
+      const newObj = { id: 'custom_' + Date.now(), name, css: css || '', html };
+      appState.customCssWidgets.push(newObj);
+      saveState();
+      showToast(`CUSTOM WIDGET "${name.toUpperCase()}" SAVED`);
+      openSettingsCenter('customCss');
+    }
+
+    function assignCustomWidgetToSlot(customId) {
+      const emptyIdx = appState.widgets.indexOf('empty');
+      const target = emptyIdx !== -1 ? emptyIdx : 0;
+      appState.widgets[target] = 'customCss';
+      appState.widgetCustomIds[target] = customId;
+      saveState();
+      renderWidgets();
+      showToast(`PINNED CUSTOM WIDGET TO SLOT ${target + 1}`);
+      closeAllModals();
+    }
+
+    /* ==========================================================================
+       7. COZY ENGLISH VOICE ENGINE
+       ========================================================================== */
+    let recognitionInstance = null;
+    let isListening = false;
+
+    function buildNumberFreeScheduleSpeech(dayKey) {
+      const classes = appState.timetable[dayKey] || [];
+      const dayName = BG_DAY_NAMES[dayKey] || dayKey;
+      if (!classes.length) return `No classes scheduled for ${dayName}.`;
+      const parts = classes.map((cls, idx) => {
+        const ordinal = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh'][idx] || 'Next';
+        const subj = cls.subject.replace(/\/\s*(ООП|ОбПП|\.\.\.)/gi, '').replace(/\d+/g, '').trim();
+        return `${ordinal} period — ${subj}`;
+      });
+      return `Schedule for ${dayName}: ${parts.join(', ')}.`;
+    }
+
+    function speakTimetableForResolvedDay() {
+      const resolved = getResolvedTimetableDay(new Date());
+      speakJarvis(buildNumberFreeScheduleSpeech(resolved.dayKey));
+    }
+
+    function speakJarvis(text) {
+      const clean = String(text)
+        .replace(/Английски език/gi, 'English')
+        .replace(/Математика/gi, 'Mathematics')
+        .replace(/Български език и литература/gi, 'Bulgarian')
+        .replace(/Биология и здравно образование/gi, 'Biology')
+        .replace(/Физика и астрономия/gi, 'Physics')
+        .replace(/\d+/g, '')
+        .trim();
+
+      showToast(clean);
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const voices = window.speechSynthesis.getVoices();
+        const voice = voices.find(v => v.name.includes('Google US English') || /^en-US/i.test(v.lang)) || voices[0];
+        const utterance = new SpeechSynthesisUtterance(clean);
+        utterance.rate = 0.88;
+        utterance.pitch = 0.88;
+        utterance.volume = 0.90;
+        if (voice) utterance.voice = voice;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function openVoiceCommandModal() {
+      openSettingsCenter('general');
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const toast = document.getElementById('jarvisToast');
+      document.getElementById('jarvisToastText').textContent = msg;
+      toast.classList.remove('hidden');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.add('hidden'), 5500);
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+      }
+      applyAppearanceSettings();
+      updateClockAndGreeting();
+      setInterval(updateClockAndGreeting, 1000);
+      appState.isPlaying = false;
+      updateNowPlayingUI();
+      renderWidgets();
+    });
+  </script>
+</body>
+</html>
